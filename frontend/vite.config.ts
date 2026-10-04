@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/solve': 'http://localhost:8000',
-      '/puzzles': 'http://localhost:8000',
-      '/models': 'http://localhost:8000',
+      '/solve':     'http://localhost:8000',
+      '/puzzles':   'http://localhost:8000',
+      '/models':    'http://localhost:8000',
+      '/benchmark': 'http://localhost:8000',
     },
   },
 })

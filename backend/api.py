@@ -40,21 +40,21 @@ _results_lock = threading.Lock()
 
 # Models available for the benchmark (competitive set)
 BENCHMARK_MODELS: dict[str, str] = {
-    "kimi-k3":         "moonshotai/Kimi-K3",
-    "deepseek-v4-pro": "deepseek-ai/DeepSeek-V4-Pro-0813",
-    "gpt-oss-120b":    "openai/gpt-oss-120b",
-    "qwen3-5-397b":    "Qwen/Qwen3.5-397B-A17B",
-    "nemotron-super":  "nvidia/nemotron-3-super-120b-a12b",
-    "glm-5-3":         "zai-org/GLM-5.3",
+    "kimi-k3":            "moonshotai/Kimi-K3",
+    "glm-5-3":            "zai-org/GLM-5.3",
+    "minimax-m3":         "MiniMaxAI/MiniMax-M3",
+    "hermes-4-405b":      "NousResearch/Hermes-4-405B",
+    "deepseek-v4.1-flash": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "nemotron-ultra-550b": "nvidia/Nemotron-3-Ultra-550b-a55b",
 }
 
 MODEL_LABELS: dict[str, str] = {
-    "kimi-k3":         "Kimi K3",
-    "deepseek-v4-pro": "DeepSeek V4 Pro",
-    "gpt-oss-120b":    "GPT OSS 120B",
-    "qwen3-5-397b":    "Qwen 3.5 397B",
-    "nemotron-super":  "Nemotron Super 120B",
-    "glm-5-3":         "GLM 5.3",
+    "kimi-k3":            "Kimi K3",
+    "glm-5-3":            "GLM 5.3",
+    "minimax-m3":         "MiniMax M3",
+    "hermes-4-405b":      "Hermes 4 405B",
+    "deepseek-v4.1-flash": "DS V4.1 Flash",
+    "nemotron-ultra-550b": "Nemotron Ultra 550B",
 }
 
 

@@ -11,12 +11,12 @@ export type BenchmarkStatus = 'idle' | 'running' | 'done' | 'error'
 export type ResultsMatrix = Record<string, Record<string, BenchmarkCell>>
 
 const MODEL_LABELS: Record<string, string> = {
-  'kimi-k3':         'Kimi K3',
-  'deepseek-v4-pro': 'DeepSeek V4 Pro',
-  'gpt-oss-120b':    'GPT OSS 120B',
-  'qwen3-5-397b':    'Qwen 3.5 397B',
-  'nemotron-super':  'Nemotron Super 120B',
-  'glm-5-3':         'GLM 5.3',
+  'kimi-k3':            'Kimi K3',
+  'glm-5-3':            'GLM 5.3',
+  'minimax-m3':         'MiniMax M3',
+  'hermes-4-405b':      'Hermes 4 405B',
+  'deepseek-v4.1-flash': 'DS V4.1 Flash',
+  'nemotron-ultra-550b': 'Nemotron Ultra 550B',
 }
 
 export function useBenchmark() {
@@ -24,7 +24,14 @@ export function useBenchmark() {
   const [results, setResults] = useState<ResultsMatrix>({})
   const [puzzleIds, setPuzzleIds] = useState<string[]>([])
   const [modelKeys, setModelKeys] = useState<string[]>([])
-  const [availableModels, setAvailableModels] = useState<BenchmarkModel[]>([])
+  const [availableModels, setAvailableModels] = useState<BenchmarkModel[]>([
+    { id: 'kimi-k3',             name: 'moonshotai/Kimi-K3',                    label: 'Kimi K3' },
+    { id: 'glm-5-3',             name: 'zai-org/GLM-5.3',                       label: 'GLM 5.3' },
+    { id: 'minimax-m3',          name: 'MiniMaxAI/MiniMax-M3',                  label: 'MiniMax M3' },
+    { id: 'hermes-4-405b',       name: 'NousResearch/Hermes-4-405B',            label: 'Hermes 4 405B' },
+    { id: 'deepseek-v4.1-flash', name: 'deepseek-ai/DeepSeek-V4.1-Flash',      label: 'DS V4.1 Flash' },
+    { id: 'nemotron-ultra-550b', name: 'nvidia/Nemotron-3-Ultra-550b-a55b',     label: 'Nemotron Ultra 550B' },
+  ])
   const [savedRuns, setSavedRuns] = useState<SavedRun[]>([])
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +48,7 @@ export function useBenchmark() {
       .then((r) => r.json())
       .then((data: { runs: SavedRun[] }) => {
         setSavedRuns(data.runs ?? [])
-        // Auto-load the latest run if any
+        setError(null)
         if (data.runs?.length > 0) {
           loadRun(data.runs[data.runs.length - 1])
         }
@@ -182,6 +189,6 @@ export function useBenchmark() {
   return {
     status, results, puzzleIds, modelKeys, summaries,
     availableModels, savedRuns, activeRunId,
-    error, start, stop, loadRun,
+    error, setError, start, stop, loadRun,
   }
 }

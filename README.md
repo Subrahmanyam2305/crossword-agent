@@ -2,7 +2,24 @@
 
 An AI agent that solves authentic New York Times crossword puzzles using a 3-phase constraint-propagation architecture backed by [Nebius Token Factory](https://studio.nebius.com/) inference.
 
-Best result: **51/74 words (68.9% word accuracy, 75.9% letter accuracy)** on the 2017-01-04 NYT puzzle using `moonshotai/Kimi-K3` with oracle/auto-check mode.
+Best result: **94.2% avg word accuracy** across 19 NYT puzzles using `moonshotai/Kimi-K3` with auto-check mode.
+
+---
+
+## Benchmark Results (Auto-Check Mode)
+
+Evaluated 6 models across 19 NYT crossword puzzles (all with oracle/auto-check enabled):
+
+| Rank | Model | Avg Word % | Avg Naive % | Avg Letter % | Blank % | Avg Time |
+|------|-------|-----------|-------------|--------------|---------|----------|
+| 1 | **Kimi K3** | **94.2%** | 36.8% | 97.0% | 0.7% | 195.8s |
+| 2 | DS V4.1 Flash | 93.9% | 8.0% | 97.0% | 0.4% | 370.2s |
+| 3 | GLM 5.3 | 92.2% | 32.1% | 96.4% | 0.8% | 186.5s |
+| 4 | MiniMax M3 | 79.7% | 52.4% | 91.7% | 2.2% | 189.9s |
+| 5 | Hermes 4 405B | 74.9% | 59.8% | 88.7% | 3.0% | 185.2s |
+| 6 | Nemotron Ultra 550B | 73.4% | 2.1% | 88.3% | 1.8% | 275.5s |
+
+**Agent % vs Naive %**: "Naive" is the Phase 1 ablation baseline — accuracy if only the rank-1 LLM candidate were placed without constraint propagation or repair. The gap shows how much the MRV + repair pipeline improves over raw LLM output.
 
 ---
 
@@ -97,7 +114,7 @@ When the constrained LLM call returns no valid candidates, the agent optionally 
 
 | Layer | Technology |
 |---|---|
-| LLM Inference | [Nebius Token Factory](https://studio.nebius.com/) (`moonshotai/Kimi-K3`, `deepseek-ai/DeepSeek-V4-Pro-0813`, etc.) |
+| LLM Inference | [Nebius Token Factory](https://studio.nebius.com/) (`moonshotai/Kimi-K3`, `deepseek-ai/DeepSeek-V4.1-Flash`, `NousResearch/Hermes-4-405B`, etc.) |
 | Backend | Python · FastAPI · SSE streaming |
 | Frontend | React 19 · TypeScript · Vite · Tailwind CSS v4 |
 | Puzzle Data | [`doshea/nyt_crosswords`](https://github.com/doshea/nyt_crosswords) dataset |
@@ -107,23 +124,29 @@ When the constrained LLM call returns no valid candidates, the agent optionally 
 
 ## Models Evaluated
 
-| Model | Phase 1 Top-20 Recall | Notes |
-|---|---|---|
-| `moonshotai/Kimi-K3` | 18/20 | Best overall — 68.9% word accuracy |
-| `deepseek-ai/DeepSeek-V4-Pro-0813` | 19/20 | Highest candidate recall |
-| `google/gemma-3-27b-it` | — | Baseline |
-| `Qwen/Qwen3-235B-A22B-Instruct-2507` | — | Large MoE |
-| `zai-org/GLM-5.3` | 7/20 rank-1 | Weak rank-1 accuracy |
+All models served via [Nebius Token Factory](https://studio.nebius.com/):
+
+| Model | Model ID | Parameters | Best Puzzle Word % |
+|-------|----------|-----------|-------------------|
+| **Kimi K3** | `moonshotai/Kimi-K3` | — | 100% (2017-03-13) |
+| **DeepSeek V4.1 Flash** | `deepseek-ai/DeepSeek-V4.1-Flash` | — | 100% (2017-03-13) |
+| **GLM 5.3** | `zai-org/GLM-5.3` | — | 97.4% (2017-03-13) |
+| **MiniMax M3** | `MiniMaxAI/MiniMax-M3` | 128B | 97.4% (2017-03-13) |
+| **Hermes 4 405B** | `NousResearch/Hermes-4-405B` | 405B | 90.8% (2017-02-13) |
+| **Nemotron Ultra 550B** | `nvidia/Nemotron-3-Ultra-550b-a55b` | 550B | 93.6% (2017-03-13) |
+
+### Key Observations
+
+- **Kimi K3** and **DS V4.1 Flash** both achieve ~94% avg word accuracy with auto-check, but Kimi is 2× faster (196s vs 370s per puzzle).
+- The **agent pipeline adds massive value** for models with weak naive baselines: DS V4.1 Flash jumps from 8% naive → 94% agent (+86pp), Nemotron Ultra from 2% → 73% (+71pp).
+- Models with strong naive scores (Hermes 59.8%, MiniMax 52.4%) still benefit from constraint repair but see smaller lifts.
+- All 6 models crash on one puzzle (`2017-04-05`) due to a non-standard 15×16 grid — remaining 19/20 puzzles are standard 15×15.
 
 ---
 
 ## Results
 
-| Puzzle | Model | Word Accuracy | Letter Accuracy | Mode |
-|---|---|---|---|---|
-| 2017-01-04 | `Kimi-K3` | 51/74 (68.9%) | 75.9% | Oracle |
-| 2017-01-04 | `Kimi-K3` | 18/74 (24.3%) | 35.8% | Standard |
-| 2017-01-04 | `gemma-3-27b-it` | 12/74 (16%) | — | Standard |
+Full benchmark results are persisted in `data/benchmark_results.json` and viewable through the interactive Benchmark tab in the frontend (charts, heatmap, box plots).
 
 ---
 
@@ -174,7 +197,7 @@ python download_puzzles.py
 ```
 crossword_agent/
 ├── backend/
-│   ├── api.py                  # FastAPI app, SSE /solve endpoint
+│   ├── api.py                  # FastAPI app, SSE /solve + /benchmark endpoints
 │   ├── requirements.txt
 │   └── src/
 │       ├── agent.py            # 3-phase solver, oracle mode
@@ -183,17 +206,20 @@ crossword_agent/
 │       ├── tools.py            # Grid operations, MRV sort, conflict detection
 │       └── web_search.py       # Tavily fallback search
 ├── data/
-│   └── puzzles/                # NYT puzzle JSONs (doshea dataset)
+│   ├── puzzles/                # NYT puzzle JSONs (doshea dataset)
+│   └── benchmark_results.json  # Persisted benchmark run snapshots
 ├── frontend/
 │   └── src/
-│       ├── App.tsx
+│       ├── App.tsx             # Tab nav: Solver | Benchmark
 │       ├── components/
 │       │   ├── CrosswordGrid.tsx
 │       │   ├── ClueList.tsx
 │       │   ├── AgentLog.tsx    # Live SSE event cards
-│       │   └── PuzzlePicker.tsx
+│       │   ├── PuzzlePicker.tsx
+│       │   └── Benchmark.tsx   # Model comparison charts, heatmap, box plots
 │       ├── hooks/
-│       │   └── useSolveStream.ts
+│       │   ├── useSolveStream.ts
+│       │   └── useBenchmark.ts # SSE benchmark runner, history loader
 │       └── types.ts
 └── README.md
 ```

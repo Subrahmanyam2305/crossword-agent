@@ -8,12 +8,12 @@ import type { BenchmarkModelSummary, SavedRun } from '../types'
 
 // ── colour palette (one per model slot) ──────────────────────────────────────
 const MODEL_COLORS: Record<string, string> = {
-  'kimi-k3':         '#6366f1',
-  'deepseek-v4-pro': '#f59e0b',
-  'gpt-oss-120b':    '#10b981',
-  'qwen3-5-397b':    '#3b82f6',
-  'nemotron-super':  '#ec4899',
-  'glm-5-3':         '#8b5cf6',
+  'kimi-k3':            '#6366f1',
+  'glm-5-3':            '#8b5cf6',
+  'minimax-m3':         '#f59e0b',
+  'hermes-4-405b':      '#10b981',
+  'deepseek-v4.1-flash': '#3b82f6',
+  'nemotron-ultra-550b': '#ec4899',
 }
 const colorFor = (key: string) => MODEL_COLORS[key] ?? '#94a3b8'
 
@@ -44,7 +44,7 @@ function BoxPlot({ summaries, results, puzzleIds }: {
   results: Record<string, Record<string, { word_pct?: number; status: string }>>
   puzzleIds: string[]
 }) {
-  const W = 560, H = 220, PAD = { l: 100, r: 20, t: 20, b: 10 }
+  const W = 560, H = 260, PAD = { l: 140, r: 20, t: 20, b: 30 }
   const innerW = W - PAD.l - PAD.r
   const innerH = H - PAD.t - PAD.b
 
@@ -102,8 +102,8 @@ function BoxPlot({ summaries, results, puzzleIds }: {
 // ── Chart card wrapper ────────────────────────────────────────────────────────
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4">{title}</h3>
+    <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">{title}</h3>
       {children}
     </div>
   )
@@ -114,33 +114,46 @@ export default function Benchmark() {
   const {
     status, results, puzzleIds, modelKeys, summaries,
     availableModels, savedRuns, activeRunId,
-    error, start, stop, loadRun,
+    error, setError, start, stop, loadRun,
   } = useBenchmark()
 
-  const [selectedModels, setSelectedModels] = useState<string[]>(['kimi-k3', 'deepseek-v4-pro'])
+  const [selectedModels, setSelectedModels] = useState<string[]>([
+    'kimi-k3', 'glm-5-3', 'minimax-m3', 'hermes-4-405b', 'deepseek-v4.1-flash', 'nemotron-ultra-550b',
+  ])
   const [oracle, setOracle] = useState(false)
   const [webSearch, setWebSearch] = useState(false)
 
   const isRunning = status === 'running'
   const hasResults = summaries.length > 0 && summaries.some((s) => s.puzzles_done > 0)
 
+  // ── short labels for x-axis readability ───────────────────────────────────
+  const SHORT_LABELS: Record<string, string> = {
+    'Kimi K3': 'Kimi K3',
+    'GLM 5.3': 'GLM 5.3',
+    'MiniMax M3': 'MiniMax M3',
+    'Hermes 4 405B': 'Hermes 405B',
+    'DS V4.1 Flash': 'DS V4.1',
+    'Nemotron Ultra 550B': 'Nemo 550B',
+  }
+  const shortName = (label: string) => SHORT_LABELS[label] ?? label
+
   // ── grouped bar data (agent vs naive) ──────────────────────────────────────
   const agentVsNaiveData = summaries.map((s) => ({
-    name: s.label,
+    name: shortName(s.label),
     'Agent Word %': s.avg_word_pct,
     'Naive Word %': s.avg_naive_pct,
   }))
 
   // ── letter accuracy bar ────────────────────────────────────────────────────
   const letterData = summaries.map((s) => ({
-    name: s.label,
+    name: shortName(s.label),
     'Word %': s.avg_word_pct,
     'Letter %': s.avg_letter_pct,
   }))
 
   // ── stacked clue outcomes ──────────────────────────────────────────────────
   const outcomeData = summaries.map((s) => ({
-    name: s.label,
+    name: shortName(s.label),
     Correct: Math.round(s.avg_word_pct),
     Wrong: Math.round(s.avg_wrong_pct),
     Blank: Math.round(s.avg_blank_pct),
@@ -163,7 +176,7 @@ export default function Benchmark() {
     <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col gap-6">
 
       {/* ── Controls ── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-wrap gap-6 items-end">
+      <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm flex flex-wrap gap-6 items-end">
         {/* Model selection */}
         <div className="flex flex-col gap-2">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Models</span>
@@ -171,7 +184,7 @@ export default function Benchmark() {
             {availableModels.map((m) => {
               const checked = selectedModels.includes(m.id)
               return (
-                <label key={m.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs cursor-pointer select-none transition-colors ${
+                <label key={m.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-medium cursor-pointer select-none transition-colors ${
                   checked
                     ? 'border-transparent text-white'
                     : 'bg-white border-gray-300 text-gray-500 hover:border-gray-400'
@@ -192,40 +205,71 @@ export default function Benchmark() {
         <div className="flex flex-col gap-2">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Options</span>
           <div className="flex gap-2">
-            {([['oracle', oracle, setOracle, 'Auto-check', 'amber'], ['webSearch', webSearch, setWebSearch, 'Web search', 'emerald']] as const).map(
-              ([, val, setter, label, color]) => (
-                <label key={label} className={`flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer select-none transition-colors ${
-                  val ? `bg-${color}-50 border-${color}-400 text-${color}-700` : 'bg-white border-gray-300 text-gray-500'
-                } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <input type="checkbox" checked={val} disabled={isRunning}
-                    onChange={(e) => (setter as (v: boolean) => void)(e.target.checked)} />
-                  {label}
-                </label>
-              )
-            )}
+            <label className={`flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer select-none transition-colors ${
+              oracle ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white border-gray-300 text-gray-500'
+            } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <input type="checkbox" checked={oracle} disabled={isRunning}
+                onChange={(e) => setOracle(e.target.checked)} />
+              Auto-check
+            </label>
+            <label className={`flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer select-none transition-colors ${
+              webSearch ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white border-gray-300 text-gray-500'
+            } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <input type="checkbox" checked={webSearch} disabled={isRunning}
+                onChange={(e) => setWebSearch(e.target.checked)} />
+              Web search
+            </label>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 ml-auto items-end">
+        <div className="flex gap-3 ml-auto items-end flex-wrap">
           {/* Saved runs */}
           {savedRuns.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">History</span>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
-                value={activeRunId ?? ''}
-                onChange={(e) => {
-                  const run = savedRuns.find((r) => r.id === e.target.value)
-                  if (run) loadRun(run)
-                }}>
-                {savedRuns.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.id} · {r.models.length} models{r.oracle ? ' · oracle' : ''}
-                  </option>
-                ))}
-              </select>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saved runs</span>
+              <div className="flex gap-2">
+                <select
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+                  value={activeRunId ?? ''}
+                  onChange={(e) => {
+                    const run = savedRuns.find((r) => r.id === e.target.value)
+                    if (run) loadRun(run)
+                  }}>
+                  {savedRuns.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.id} · {r.models.length} models{r.oracle ? ' · oracle' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    const run = savedRuns.find((r) => r.id === activeRunId) ?? savedRuns[savedRuns.length - 1]
+                    if (run) loadRun(run)
+                  }}
+                  className="px-3 py-2 border border-gray-300 bg-white text-gray-600 rounded-md text-sm hover:bg-gray-50 font-medium"
+                  title="Load selected run">
+                  Load
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Load button even when no runs yet (triggers fetch) */}
+          {savedRuns.length === 0 && (
+            <button
+              onClick={() => {
+                setError(null)
+                fetch('/benchmark/results')
+                  .then((r) => r.json())
+                  .then((data: { runs: { id: string; oracle: boolean; web_search: boolean; models: string[]; results: Record<string, Record<string, Record<string, number>>> }[] }) => {
+                    if (data.runs?.length > 0) loadRun(data.runs[data.runs.length - 1] as any)
+                  })
+                  .catch(() => {})
+              }}
+              className="px-4 py-2 border border-gray-300 bg-white text-gray-600 rounded-md text-sm hover:bg-gray-50 font-medium">
+              Load saved results
+            </button>
           )}
 
           {isRunning ? (
@@ -249,9 +293,9 @@ export default function Benchmark() {
 
       {/* ── Progress bar ── */}
       {isRunning && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Running {modelKeys.length} models × {puzzleIds.length} puzzles…</span>
+            <span>Running {modelKeys.length} models × {puzzleIds.length} puzzles</span>
             <span className="font-medium">{doneJobs} / {totalJobs} done ({progressPct}%)</span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2">
@@ -263,10 +307,9 @@ export default function Benchmark() {
 
       {/* ── Empty state ── */}
       {!hasResults && !isRunning && (
-        <div className="text-center py-16 text-gray-400">
-          <div className="text-4xl mb-3">📊</div>
-          <p className="text-lg font-medium text-gray-500">No benchmark results yet</p>
-          <p className="text-sm mt-1">Select models above and click Run Benchmark</p>
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-base font-medium text-gray-500">No benchmark results yet</p>
+          <p className="text-sm mt-1.5 text-gray-400">Select models above and click Run Benchmark to start</p>
         </div>
       )}
 
@@ -276,13 +319,13 @@ export default function Benchmark() {
           {/* Row 1: agent vs naive + outcomes */}
           <div className="grid grid-cols-2 gap-5">
             <ChartCard title="Agent vs Naive LLM — Avg Word Accuracy (%)">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={agentVsNaiveData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={agentVsNaiveData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} height={70} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
                   <Tooltip formatter={(v: number) => `${v}%`} />
-                  <Legend />
+                  <Legend verticalAlign="top" height={28} />
                   <Bar dataKey="Agent Word %" fill="#6366f1" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="Naive Word %" fill="#cbd5e1" radius={[3, 3, 0, 0]} />
                 </BarChart>
@@ -290,13 +333,13 @@ export default function Benchmark() {
             </ChartCard>
 
             <ChartCard title="Clue Outcomes per Model (avg %)">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={outcomeData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={outcomeData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} height={70} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
                   <Tooltip formatter={(v: number) => `${v}%`} />
-                  <Legend />
+                  <Legend verticalAlign="top" height={28} />
                   <Bar dataKey="Correct" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="Wrong" stackId="a" fill="#f59e0b" />
                   <Bar dataKey="Blank" stackId="a" fill="#f87171" radius={[3, 3, 0, 0]} />
@@ -308,13 +351,13 @@ export default function Benchmark() {
           {/* Row 2: letter accuracy + scatter */}
           <div className="grid grid-cols-2 gap-5">
             <ChartCard title="Word % vs Letter % Accuracy">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={letterData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={letterData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} height={70} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
                   <Tooltip formatter={(v: number) => `${v}%`} />
-                  <Legend />
+                  <Legend verticalAlign="top" height={28} />
                   <Bar dataKey="Word %" fill="#6366f1" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="Letter %" fill="#a5b4fc" radius={[3, 3, 0, 0]} />
                 </BarChart>
@@ -322,8 +365,8 @@ export default function Benchmark() {
             </ChartCard>
 
             <ChartCard title="Word % vs Letter % — Scatter (avg per model)">
-              <ResponsiveContainer width="100%" height={240}>
-                <ScatterChart margin={{ top: 10, right: 16, left: 0, bottom: 10 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart margin={{ top: 10, right: 16, left: 0, bottom: 24 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="x" type="number" domain={[0, 100]} name="Word %" unit="%" tick={{ fontSize: 11 }} label={{ value: 'Word %', position: 'insideBottom', offset: -4, fontSize: 11 }} />
                   <YAxis dataKey="y" type="number" domain={[0, 100]} name="Letter %" unit="%" tick={{ fontSize: 11 }} label={{ value: 'Letter %', angle: -90, position: 'insideLeft', fontSize: 11 }} />

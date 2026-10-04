@@ -38,22 +38,25 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Crossword Agent</h1>
-          <p className="text-xs text-gray-500">Nebius Token Factory · 3-Phase Constraint Solver</p>
+      <header className="bg-white border-b border-gray-200 px-6 py-0 flex items-center gap-0 shadow-sm">
+        <div className="py-3 pr-8 border-r border-gray-100">
+          <h1 className="text-base font-semibold tracking-tight text-gray-900">Crossword Agent</h1>
+          <p className="text-[11px] text-gray-400 leading-tight">Nebius Token Factory · 3-Phase Constraint Solver</p>
         </div>
 
         {/* Tab nav */}
-        <nav className="flex gap-1 ml-4">
-          {(['solver', 'benchmark'] as Tab[]).map((tab) => (
+        <nav className="flex h-full ml-1">
+          {([['solver', 'Solver'], ['benchmark', 'Benchmark']] as [Tab, string][]).map(([tab, label]) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors capitalize ${
+              className={`relative px-5 py-3.5 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  ? 'text-gray-900'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}>
-              {tab === 'benchmark' ? '📊 Benchmark' : '🔤 Solver'}
+              {label}
+              {activeTab === tab && (
+                <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gray-900 rounded-full" />
+              )}
             </button>
           ))}
         </nav>
@@ -65,10 +68,10 @@ export default function App() {
               {isStreaming && (
                 <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
                   <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  Solving…
+                  Solving
                 </div>
               )}
-              {status === 'done' && <span className="text-green-600 text-sm font-medium">✓ Done</span>}
+              {status === 'done' && <span className="text-green-600 text-sm font-medium">Done</span>}
               {status === 'error' && <span className="text-red-500 text-sm">{error}</span>}
             </>
           )}
