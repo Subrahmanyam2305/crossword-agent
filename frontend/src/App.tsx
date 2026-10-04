@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AgentLog from './components/AgentLog'
 import Benchmark from './components/Benchmark'
 import ClueList from './components/ClueList'
@@ -10,7 +10,7 @@ type Tab = 'solver' | 'benchmark'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('solver')
-  const { steps, status, grid, puzzle, error, start } = useSolveStream()
+  const { steps, status, grid, setGrid, puzzle, error, start, loadPuzzle } = useSolveStream()
   const [selectedClueId, setSelectedClueId] = useState<string | null>(null)
   const isStreaming = status === 'streaming'
 
@@ -34,6 +34,14 @@ export default function App() {
   }, [latestStep])
 
   const highlightStep = latestStep?.clue_id ? latestStep : null
+
+  const handleCellEdit = useCallback((row: number, col: number, value: string) => {
+    setGrid((prev) => {
+      const next = prev.map((r) => [...r])
+      if (next[row]) next[row][col] = value
+      return next
+    })
+  }, [setGrid])
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -83,6 +91,7 @@ export default function App() {
         <main className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-4">
           <PuzzlePicker
             onSelect={(puzzleId, model, webSearch, oracle) => { setSelectedClueId(null); start(puzzleId, model, webSearch, oracle) }}
+            onPuzzleChange={(puzzleId) => { setSelectedClueId(null); loadPuzzle(puzzleId) }}
             disabled={isStreaming}
           />
 
@@ -96,6 +105,7 @@ export default function App() {
                 latestStep={highlightStep}
                 selectedClueId={selectedClueId}
                 onSelectClue={setSelectedClueId}
+                onCellEdit={!isStreaming ? handleCellEdit : null}
               />
 
               <div className="flex gap-3 text-xs text-gray-500">

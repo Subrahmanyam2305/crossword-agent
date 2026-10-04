@@ -11,11 +11,24 @@ export function useSolveStream() {
   const [error, setError] = useState<string | null>(null)
   const esRef = useRef<EventSource | null>(null)
 
+  const loadPuzzle = useCallback(async (puzzleId: string) => {
+    try {
+      const res = await fetch(`/puzzles/${puzzleId}`)
+      const detail: PuzzleDetail = await res.json()
+      setPuzzle(detail)
+      setGrid(detail.grid)
+      setSteps([])
+      setStatus('idle')
+      setError(null)
+    } catch {
+      setPuzzle(null)
+    }
+  }, [])
+
   const start = useCallback(async (puzzleId: string, model: string, webSearch = false, oracle = false) => {
     esRef.current?.close()
     setSteps([])
     setError(null)
-    setGrid([])
     setStatus('streaming')
 
     // Fetch puzzle detail first so we have clues/positions for the grid UI
@@ -23,6 +36,7 @@ export function useSolveStream() {
       const res = await fetch(`/puzzles/${puzzleId}`)
       const detail: PuzzleDetail = await res.json()
       setPuzzle(detail)
+      setGrid(detail.grid)
     } catch {
       setPuzzle(null)
     }
@@ -56,5 +70,5 @@ export function useSolveStream() {
     setStatus('idle')
   }, [])
 
-  return { steps, status, grid, puzzle, error, start, stop }
+  return { steps, status, grid, setGrid, puzzle, error, start, stop, loadPuzzle }
 }

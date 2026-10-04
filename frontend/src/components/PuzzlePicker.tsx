@@ -3,22 +3,23 @@ import type { PuzzleMeta } from '../types'
 
 interface Props {
   onSelect: (puzzleId: string, model: string, webSearch: boolean, oracle: boolean) => void
+  onPuzzleChange: (puzzleId: string) => void
   disabled: boolean
 }
 
 const MODEL_OPTIONS = [
-  { id: 'qwen3-30b',         label: 'Qwen3 30B (fast)' },
-  { id: 'qwen3-235b',        label: 'Qwen3 235B (large)' },
-  { id: 'gemma-3-27b',       label: 'Gemma 3 27B' },
-  { id: 'kimi-k3',           label: 'Kimi K3' },
-  { id: 'deepseek-v4-pro',   label: 'DeepSeek V4 Pro' },
-  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+  { id: 'kimi-k3',             label: 'Kimi K3' },
+  { id: 'deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash' },
+  { id: 'glm-5-3',             label: 'GLM 5.3' },
+  { id: 'minimax-m3',          label: 'MiniMax M3' },
+  { id: 'hermes-4-405b',       label: 'Hermes 4 405B' },
+  { id: 'nemotron-ultra-550b', label: 'Nemotron Ultra 550B' },
 ]
 
-export default function PuzzlePicker({ onSelect, disabled }: Props) {
+export default function PuzzlePicker({ onSelect, onPuzzleChange, disabled }: Props) {
   const [puzzles, setPuzzles] = useState<PuzzleMeta[]>([])
   const [selectedPuzzle, setSelectedPuzzle] = useState('')
-  const [selectedModel, setSelectedModel] = useState('qwen3-30b')
+  const [selectedModel, setSelectedModel] = useState('kimi-k3')
   const [webSearch, setWebSearch] = useState(false)
   const [oracle, setOracle] = useState(false)
 
@@ -27,10 +28,13 @@ export default function PuzzlePicker({ onSelect, disabled }: Props) {
       .then((r) => r.json())
       .then((data) => {
         setPuzzles(data)
-        if (data.length > 0) setSelectedPuzzle(data[0].id)
+        if (data.length > 0) {
+          setSelectedPuzzle(data[0].id)
+          onPuzzleChange(data[0].id)
+        }
       })
       .catch(() => {})
-  }, [])
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSolve = () => {
     if (selectedPuzzle) onSelect(selectedPuzzle, selectedModel, webSearch, oracle)
@@ -42,7 +46,10 @@ export default function PuzzlePicker({ onSelect, disabled }: Props) {
         <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Puzzle</label>
         <select
           value={selectedPuzzle}
-          onChange={(e) => setSelectedPuzzle(e.target.value)}
+          onChange={(e) => {
+            setSelectedPuzzle(e.target.value)
+            onPuzzleChange(e.target.value)
+          }}
           disabled={disabled}
           className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
         >
@@ -87,7 +94,7 @@ export default function PuzzlePicker({ onSelect, disabled }: Props) {
               disabled={disabled}
               className="accent-emerald-500"
             />
-            <span>🔍 Web search</span>
+            <span>Web search</span>
           </label>
 
           <label className={`flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer select-none transition-colors ${
@@ -102,7 +109,7 @@ export default function PuzzlePicker({ onSelect, disabled }: Props) {
               disabled={disabled}
               className="accent-amber-500"
             />
-            <span>✓ Auto-check</span>
+            <span>Auto-check</span>
           </label>
         </div>
       </div>

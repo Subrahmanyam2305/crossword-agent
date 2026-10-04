@@ -7,12 +7,12 @@ from openai import OpenAI
 NEBIUS_BASE_URL = "https://api.studio.nebius.com/v1/"
 
 MODELS = {
-    "qwen3-30b":         "Qwen/Qwen3-30B-A3B-Instruct-2507",
-    "qwen3-235b":        "Qwen/Qwen3-235B-A22B-Instruct-2507",
-    "gemma-3-27b":       "google/gemma-3-27b-it",
-    "kimi-k3":           "moonshotai/Kimi-K3",
-    "deepseek-v4-pro":   "deepseek-ai/DeepSeek-V4-Pro",
-    "deepseek-v4-flash": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "kimi-k3":             "moonshotai/Kimi-K3",
+    "deepseek-v4.1-flash": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "glm-5-3":             "zai-org/GLM-5.3",
+    "minimax-m3":          "MiniMaxAI/MiniMax-M3",
+    "hermes-4-405b":       "NousResearch/Hermes-4-405B",
+    "nemotron-ultra-550b": "nvidia/Nemotron-3-Ultra-550b-a55b",
 }
 
 _client: OpenAI | None = None
