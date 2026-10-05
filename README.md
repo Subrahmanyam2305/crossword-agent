@@ -4,6 +4,8 @@ An AI agent that solves authentic New York Times crossword puzzles using a 3-pha
 
 Best result: **94.2% avg word accuracy** across 19 NYT puzzles using `moonshotai/Kimi-K3` with auto-check mode.
 
+[Demo Video](https://www.loom.com/share/e28f169072e94699acfbfc74e91af225)
+
 ---
 
 ## Benchmark Results (Auto-Check Mode)

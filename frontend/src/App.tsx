@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AgentLog from './components/AgentLog'
+import Architecture from './components/Architecture'
 import Benchmark from './components/Benchmark'
 import ClueList from './components/ClueList'
 import CrosswordGrid from './components/CrosswordGrid'
 import PuzzlePicker from './components/PuzzlePicker'
 import { useSolveStream } from './hooks/useSolveStream'
 
-type Tab = 'solver' | 'benchmark'
+type Tab = 'solver' | 'benchmark' | 'architecture'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('solver')
@@ -54,7 +55,7 @@ export default function App() {
 
         {/* Tab nav */}
         <nav className="flex h-full ml-1">
-          {([['solver', 'Solver'], ['benchmark', 'Benchmark']] as [Tab, string][]).map(([tab, label]) => (
+          {([['solver', 'Solver'], ['benchmark', 'Benchmark'], ['architecture', 'Architecture']] as [Tab, string][]).map(([tab, label]) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`relative px-5 py-3.5 text-sm font-medium transition-colors ${
                 activeTab === tab
@@ -87,8 +88,7 @@ export default function App() {
       </header>
 
       {/* Solver tab */}
-      {activeTab === 'solver' && (
-        <main className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-4">
+      <main className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-4" style={{ display: activeTab === 'solver' ? undefined : 'none' }}>
           <PuzzlePicker
             onSelect={(puzzleId, model, webSearch, oracle) => { setSelectedClueId(null); start(puzzleId, model, webSearch, oracle) }}
             onPuzzleChange={(puzzleId) => { setSelectedClueId(null); loadPuzzle(puzzleId) }}
@@ -175,10 +175,16 @@ export default function App() {
             </div>
           )}
         </main>
-      )}
 
       {/* Benchmark tab */}
-      {activeTab === 'benchmark' && <Benchmark />}
+      <div style={{ display: activeTab === 'benchmark' ? undefined : 'none' }}>
+        <Benchmark />
+      </div>
+
+      {/* Architecture tab */}
+      <div style={{ display: activeTab === 'architecture' ? undefined : 'none' }}>
+        <Architecture />
+      </div>
     </div>
   )
 }
