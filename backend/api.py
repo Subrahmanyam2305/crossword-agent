@@ -46,6 +46,8 @@ BENCHMARK_MODELS: dict[str, str] = {
     "hermes-4-405b":      "NousResearch/Hermes-4-405B",
     "deepseek-v4.1-flash": "deepseek-ai/DeepSeek-V4.1-Flash",
     "nemotron-ultra-550b": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "gpt-oss-120b":       "openai/gpt-oss-120b",
+    "gpt-oss-120b-dedicated": "dedicated/openai/gpt-oss-120b-asJtKh",
 }
 
 MODEL_LABELS: dict[str, str] = {
@@ -55,6 +57,8 @@ MODEL_LABELS: dict[str, str] = {
     "hermes-4-405b":      "Hermes 4 405B",
     "deepseek-v4.1-flash": "DS V4.1 Flash",
     "nemotron-ultra-550b": "Nemotron Ultra 550B",
+    "gpt-oss-120b":       "GPT-OSS 120B",
+    "gpt-oss-120b-dedicated": "GPT-OSS 120B (Ded.)",
 }
 
 

@@ -5,6 +5,7 @@ import re
 from openai import OpenAI
 
 NEBIUS_BASE_URL = "https://api.studio.nebius.com/v1/"
+NEBIUS_DEDICATED_URL = "https://api.tokenfactory.nebius.com/v1/"
 
 MODELS = {
     "kimi-k3":             "moonshotai/Kimi-K3",
@@ -13,20 +14,34 @@ MODELS = {
     "minimax-m3":          "MiniMaxAI/MiniMax-M3",
     "hermes-4-405b":       "NousResearch/Hermes-4-405B",
     "nemotron-ultra-550b": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "gpt-oss-120b":        "openai/gpt-oss-120b",
+    "gpt-oss-120b-dedicated": "dedicated/openai/gpt-oss-120b-asJtKh",
 }
 
 _client: OpenAI | None = None
+_dedicated_client: OpenAI | None = None
 
 
-def get_client() -> OpenAI:
+def _get_api_key() -> str:
+    api_key = os.environ.get("NEBIUS_API_KEY")
+    if not api_key:
+        raise EnvironmentError(
+            "NEBIUS_API_KEY not set. Copy .env.example to .env and add your key."
+        )
+    return api_key
+
+
+def get_client(model_id: str = "") -> OpenAI:
+    """Return the right OpenAI client based on whether this is a dedicated endpoint."""
+    if model_id.startswith("dedicated/"):
+        global _dedicated_client
+        if _dedicated_client is None:
+            _dedicated_client = OpenAI(api_key=_get_api_key(), base_url=NEBIUS_DEDICATED_URL)
+        return _dedicated_client
+
     global _client
     if _client is None:
-        api_key = os.environ.get("NEBIUS_API_KEY")
-        if not api_key:
-            raise EnvironmentError(
-                "NEBIUS_API_KEY not set. Copy .env.example to .env and add your key."
-            )
-        _client = OpenAI(api_key=api_key, base_url=NEBIUS_BASE_URL)
+        _client = OpenAI(api_key=_get_api_key(), base_url=NEBIUS_BASE_URL)
     return _client
 
 
@@ -42,7 +57,9 @@ def _extract_text(choice) -> str:
     if content:
         return content
 
-    reasoning = getattr(choice.message, "reasoning_content", None) or ""
+    reasoning = getattr(choice.message, "reasoning_content", None) \
+        or getattr(choice.message, "reasoning", None) \
+        or ""
     # Find the last JSON-array-like substring in the reasoning trace
     matches = list(re.finditer(r'\[[^\[\]]{3,}\]', reasoning))
     if matches:
@@ -124,7 +141,7 @@ def get_candidates_unconstrained(
         f'The first entry must be your single best answer. No explanation, no other text.\n'
         f'Example for 5 letters: ["SWARM","HORDE","TROOP","GROUP","CLOUD","FLOCK","BUNCH","BEVY","COVEY","BROOD"]'
     )
-    client = get_client()
+    client = get_client(model)
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -175,7 +192,7 @@ def get_candidates_constrained(
         f'Every word MUST be exactly {length} uppercase letters AND satisfy the fixed positions. '
         f'Output ONLY the JSON array.'
     )
-    client = get_client()
+    client = get_client(model)
     response = client.chat.completions.create(
         model=model,
         messages=[

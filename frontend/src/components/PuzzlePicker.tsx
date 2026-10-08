@@ -14,6 +14,7 @@ const MODEL_OPTIONS = [
   { id: 'minimax-m3',          label: 'MiniMax M3' },
   { id: 'hermes-4-405b',       label: 'Hermes 4 405B' },
   { id: 'nemotron-ultra-550b', label: 'Nemotron Ultra 550B' },
+  { id: 'gpt-oss-120b-dedicated', label: 'GPT-OSS 120B (Dedicated)' },
 ]
 
 export default function PuzzlePicker({ onSelect, onPuzzleChange, disabled }: Props) {
